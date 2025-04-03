@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: global-config
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: https://github.com/nigle-dev/appset-polis.git
+        revision: HEAD
+        directories:
+          - path: projects/*
+  template:
+    metadata:
+      name: '{{.path.basename}}-config'
+    spec:
+      destination:
+        namespace: '{{.path.basename}}'
+        server: 'https://kubernetes.default.svc'
+      project: default
+      sources:
+        - path: chart
+          repoURL: 'https://github.com/nigle-dev/appset-polis.git'
+          targetRevision: HEAD
+          helm:
+            valueFiles:
+              - $values/projects/{{.path.basename}}/values.yaml
+            parameters:
+              - name: projectName
+                value: '{{.path.basename}}'
+                # enable for OpenShift GitOps
+#              - name: argoNamespace
+#                value: openshift-gitops
+        - repoURL: 'https://github.com/nigle-dev/appset-polis.git'
+          targetRevision: HEAD
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: trueapiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: global-config
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: https://github.com/nigle-dev/appset-polis.git
+        revision: HEAD
+        directories:
+          - path: projects/*
+  template:
+    metadata:
+      name: '{{.path.basename}}-config'
+    spec:
+      destination:
+        namespace: '{{.path.basename}}'
+        server: 'https://kubernetes.default.svc'
+      project: default
+      sources:
+        - path: chart
+          repoURL: 'https://github.com/nigle-dev/appset-polis.git'
+          targetRevision: HEAD
+          helm:
+            valueFiles:
+              - $values/projects/{{.path.basename}}/values.yaml
+            parameters:
+              - name: projectName
+                value: '{{.path.basename}}'
+                # enable for OpenShift GitOps
+#              - name: argoNamespace
+#                value: openshift-gitops
+        - repoURL: 'https://github.com/nigle-dev/appset-polis.git'
+          targetRevision: HEAD
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

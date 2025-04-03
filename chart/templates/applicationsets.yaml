@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: '{{ .Values.projectName }}-apps-config'
+  namespace: {{ .Values.argoNamespace | default "argocd" }}
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: https://github.com/nigle-dev/appset-polis.git
+        revision: HEAD
+        directories:
+          {{- range .Values.stages }}
+          - path: apps/{{ $.Values.projectName }}/*/{{ .name }}
+          {{- end }}
+  template:
+    metadata:
+      name: '{{`{{ index .path.segments 2 }}`}}-{{`{{ index .path.segments 3 }}`}}'
+    spec:
+      destination:
+        namespace: '{{`{{ index .path.segments 1 }}`}}-{{`{{ index .path.segments 3 }}`}}'
+        server: 'https://kubernetes.default.svc'
+      project: '{{ .Values.projectName }}'
+      sources:
+        - chart: polis
+          repoURL: 'https://charts.smoose.cloud'
+          targetRevision: 0.1.0
+          helm:
+            valueFiles:
+              - $values/apps/{{ .Values.projectName }}/{{`{{ index .path.segments 2 }}`}}/{{`{{ index .path.segments 3 }}`}}/values.yaml
+            parameters:
+              - name: appName
+                value: '{{ .Values.projectName }}'
+        - repoURL: 'https://github.com/nigle-dev/appset-polis.git'
+          targetRevision: HEAD
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
